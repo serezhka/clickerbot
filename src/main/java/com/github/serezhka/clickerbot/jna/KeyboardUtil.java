@@ -1,5 +1,6 @@
 package com.github.serezhka.clickerbot.jna;
 
+import com.github.serezhka.clickerbot.jna.lib.User32Ext;
 import com.sun.jna.platform.win32.BaseTSD;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
@@ -29,5 +30,9 @@ public class KeyboardUtil {
         input.input.ki.wVk = new WinDef.WORD(keyCode);
         input.input.ki.dwFlags = new WinDef.DWORD(keyDown ? 0 : 2); // 0 - down ; 2 - release
         User32.INSTANCE.SendInput(new WinDef.DWORD(1), (WinUser.INPUT[]) input.toArray(1), input.size());
+    }
+
+    public static boolean isKeyPressed(int vKey) {
+        return User32Ext.INSTANCE.GetAsyncKeyState(vKey) < 0;
     }
 }

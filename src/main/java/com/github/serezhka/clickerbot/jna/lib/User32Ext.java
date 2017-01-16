@@ -11,4 +11,6 @@ public interface User32Ext extends W32APIOptions {
     User32Ext INSTANCE = (User32Ext) Native.loadLibrary("user32", User32Ext.class, W32APIOptions.DEFAULT_OPTIONS);
 
     boolean GetCursorPos(long[] lpPoint);
+
+    int GetAsyncKeyState(int vkKey);
 }
