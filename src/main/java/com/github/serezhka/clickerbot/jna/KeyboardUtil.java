@@ -1,6 +1,5 @@
 package com.github.serezhka.clickerbot.jna;
 
-import com.github.serezhka.clickerbot.jna.lib.User32Ext;
 import com.sun.jna.platform.win32.BaseTSD;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
@@ -33,6 +32,6 @@ public class KeyboardUtil {
     }
 
     public static boolean isKeyPressed(int vKey) {
-        return User32Ext.INSTANCE.GetAsyncKeyState(vKey) < 0;
+        return User32.INSTANCE.GetAsyncKeyState(vKey) < 0;
     }
 }
