@@ -1,19 +1,18 @@
 package com.github.serezhka.clickerbot.jna;
 
-import com.sun.jna.platform.win32.BaseTSD;
-import com.sun.jna.platform.win32.User32;
-import com.sun.jna.platform.win32.WinDef;
-import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.*;
 
 /**
  * @author Sergei Fedorov (serezhka@xakep.ru)
  */
 public class KeyboardUtil {
 
-    public static void sendInput(int keyCode, long releaseDelay) throws InterruptedException {
+    public static void sendInput(int keyCode, long releaseDelay) {
         sendInput(keyCode, true);
         try {
             Thread.sleep(releaseDelay);
+        } catch (InterruptedException ignored) {
         } finally {
             sendInput(keyCode, false);
         }
@@ -33,5 +32,45 @@ public class KeyboardUtil {
 
     public static boolean isKeyPressed(int vKey) {
         return User32.INSTANCE.GetAsyncKeyState(vKey) < 0;
+    }
+
+    public static class KeyboardHook extends Thread implements WinUser.LowLevelKeyboardProc {
+
+        private final KeyProcessor keyProcessor;
+        private WinUser.HHOOK hhk;
+
+        public KeyboardHook(KeyProcessor keyProcessor) {
+            this.keyProcessor = keyProcessor;
+        }
+
+        @Override
+        public void run() {
+            hhk = User32.INSTANCE.SetWindowsHookEx(WinUser.WH_KEYBOARD_LL, this, Kernel32.INSTANCE.GetModuleHandle(null), 0);
+            int result;
+            WinUser.MSG msg = new WinUser.MSG();
+            while ((result = User32.INSTANCE.GetMessage(msg, null, 0, 0)) != 0) {
+                if (result == -1) {
+                    break;
+                } else {
+                    User32.INSTANCE.TranslateMessage(msg);
+                    User32.INSTANCE.DispatchMessage(msg);
+                }
+            }
+            User32.INSTANCE.UnhookWindowsHookEx(hhk);
+        }
+
+        @Override
+        public WinDef.LRESULT callback(int nCode, WinDef.WPARAM wParam, WinUser.KBDLLHOOKSTRUCT lParam) {
+            if (nCode >= 0 && WinUser.WM_KEYDOWN == wParam.intValue()) {
+                keyProcessor.onKeyPress(lParam.vkCode);
+            }
+            long peer = Pointer.nativeValue(lParam.getPointer());
+            return User32.INSTANCE.CallNextHookEx(hhk, nCode, wParam, new WinDef.LPARAM(peer));
+        }
+
+        @FunctionalInterface
+        public interface KeyProcessor {
+            void onKeyPress(int keyCode);
+        }
     }
 }
